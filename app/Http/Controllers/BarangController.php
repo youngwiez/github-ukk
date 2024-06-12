@@ -19,23 +19,23 @@ class BarangController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->search){
-            $barang = DB::table('barang')->select('id','merk','seri','spesifikasi','stok','kategori_id')
-                                             ->where('id','like','%'.$request->search.'%')
-                                             ->orWhere('merk','like','%'.$request->search.'%')
-                                             ->orWhere('seri','like','%'.$request->search.'%')
-                                             ->orWhere('spesifikasi','like','%'.$request->search.'%')
-                                             ->orWhere('stok','like','%'.$request->search.'%')
-                                             ->orWhere('kategori_id','like','%'.$request->search.'%')
-                                             ->paginate(10);
+        // menggunakan eloquent
+        if ($request->search) {
+            $barang = Barang::with('kategori')
+                            ->where('id','like','%'.$request->search.'%')
+                            ->orWhere('merk', 'like','%'.$request->search.'%')
+                            ->orWhere('seri','like','%'.$request->search.'%')
+                            ->orWhere('spesifikasi','like','%'.$request->search.'%')
+                            ->orWhere('stok','like','%'.$request->search.'%')
+                            ->orWhereHas('kategori', function($query) use ($request) {
+                                $query->where('deskripsi','like','%'.$request->search.'%');
+                            })
+                            ->paginate(3);
         } else {
-            $barang = DB::table('barang')->select('id','merk','seri','spesifikasi','stok','kategori_id')->paginate(10);
-            $barang = Barang::with('kategori')->get();
+            $barang = Barang::with('kategori')->paginate(3);
         }
+
         return view('dashboard.barang.index', ['barang' => $barang]);
-        // return view('dashboard.kategori.index', ['kategori' => $kategori]);
-        // $barang = DB::table('barang')->get();
-        // $barang = Barang::with('kategori')->get();
     }
 
     /**
@@ -67,14 +67,31 @@ class BarangController extends Controller
                 ->withInput();
         }
 
-        Barang::create([
-            'merk'          => $request->merk,
-            'seri'          => $request->seri,
-            'spesifikasi'   => $request->spesifikasi,
-            'stok'          => 0,
-            'kategori_id'   => $request->kategori_id,
-        ]);
+        // Barang::create([
+        //     'merk'          => $request->merk,
+        //     'seri'          => $request->seri,
+        //     'spesifikasi'   => $request->spesifikasi,
+        //     'stok'          => 0,
+        //     'kategori_id'   => $request->kategori_id,
+        // ]);
 
+        // transaction
+        try {
+            DB::beginTransaction(); // <= Starting the transaction
+            // Insert a new order history
+            DB::table('barang')->insert([
+                'merk'          => $request->merk,
+                'seri'          => $request->seri,
+                'spesifikasi'   => $request->spesifikasi,
+                'stok'          => 0,
+                'kategori_id'   => $request->kategori_id,
+            ]);
+            DB::commit(); // <= Commit the changes
+        } catch (\Exception $e) {
+            report($e);
+            DB::rollBack(); // <= Rollback in case of an exception
+            return redirect()->route('barang.create')->with(['error' => 'Terjadi kesalahan saat menyimpan data!']);
+        }
         return redirect()->route('barang.index')->with(['success' => 'Data Barang Berhasil Disimpan!']);
     }
 
@@ -133,24 +150,24 @@ class BarangController extends Controller
     
         // cek apakah qty masuk lebih besar daripada stok 
         if ($barang->stok > 0) {
-            return redirect()->route('barang.index')->with(['error' => 'Barang dengan stok lebih dari 0 tidak dapat dihapus!']);
+            return redirect()->route('barang.index')->with(['error' => 'Data Barang Gagal Dihapus! Barang dengan stok lebih dari 0 tidak dapat dihapus!']);
         }
     
         // cek apakah berelasi dengan barangkeluar
         $relatedBarangKeluar = Pengeluaran::where('barang_id', $id)->exists();
     
         if ($relatedBarangKeluar) {
-            return redirect()->route('barang.index')->with(['gagal' => 'Data Gagal Dihapus! Data masih digunakan dalam tabel Pengeluaran']);
+            return redirect()->route('barang.index')->with(['gagal' => 'Data Barang Gagal Dihapus! Data masih digunakan dalam tabel Pengeluaran']);
         }
 
         // cek apakah berelasi dengan barangmasuk
         $relatedBarangMasuk = Pemasukan::where('barang_id', $id)->exists();
 
         if ($relatedBarangMasuk) {
-            return redirect()->route('barang.index')->with(['gagal' => 'Data Gagal Dihapus! Data masih digunakan dalam tabel Pemasukan']);
+            return redirect()->route('barang.index')->with(['gagal' => 'Data Barang Gagal Dihapus! Data masih digunakan dalam tabel Pemasukan']);
         }
     
         $barang->delete();
-        return redirect()->route('barang.index')->with(['success' => 'Data Berhasil Dihapus!']);
+        return redirect()->route('barang.index')->with(['success' => 'Data Barang Berhasil Dihapus!']);
     }
 }

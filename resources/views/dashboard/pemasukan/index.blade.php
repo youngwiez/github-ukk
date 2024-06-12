@@ -7,7 +7,20 @@
                 <div class="card">
                     <div class="card-body d-flex justify-content-between align-items-center">
                         <h2><strong>Data Pemasukan</strong></h2>
-                        <a href="{{ route('pemasukan.create') }}" class="btn btn-md btn-success">Tambah Pemasukan</a>
+                        <div class="col-md-6 text-right">
+                            <form action="/pemasukan" method="GET"
+                                class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
+                                @csrf
+                                <div class="input-group">
+                                    <input type="text" name="search" class="form-control bg-light border-0 small" placeholder="Search for..." aria-label="Search" aria-describedby="basic-addon2" value="{{ request('search') }}">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-primary" type="submit">
+                                            <i class="fas fa-search fa-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
                 <table class="table table-bordered table-hover">
@@ -25,13 +38,14 @@
                     <tbody>
                         @forelse ($pemasukan as $rowmasuk)
                             <tr>
-                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $loop->iteration + ($pemasukan->currentPage() - 1) * $pemasukan->perPage() }}</td>
                                 <td>{{ $rowmasuk->tgl_masuk }}</td>
                                 <td>{{ $rowmasuk->qty_masuk }}</td>
                                 <td>{{ $rowmasuk->barang->merk }}</td>
                                 <td>{{ $rowmasuk->seri }}</td>
                                 <td class="text-center">
                                     <form onsubmit="return confirm('Apakah Anda Yakin?');" action="{{ route('pemasukan.destroy', $rowmasuk->id) }}" method="POST">
+                                        <a href="{{ route('pemasukan.show', $rowmasuk->id) }}" class="btn btn-sm btn-dark"><i class="fa fa-eye"></i></i></a>
                                         <a href="{{ route('pemasukan.edit', $rowmasuk->id) }}" class="btn btn-sm btn-primary"><i class="fa fa-pencil-alt"></i></a>
                                         @csrf
                                         @method('DELETE')
@@ -46,6 +60,8 @@
                         @endforelse
                     </tbody>
                 </table>
+                {!! $pemasukan->links() !!}
+                <a href="{{ route('pemasukan.create') }}" class="btn btn-md btn-success mb-3">Tambah Pemasukan</a>
             </div>
         </div>
     </div>

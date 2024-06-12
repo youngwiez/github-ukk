@@ -11,12 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::unprepared('
-        CREATE PROCEDURE getKategoriAll
-        BEGIN
-            SELECT * FROM kategori;
-        END
-        ');
+        Schema::create('kategori_procedure', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
+        });
     }
 
     /**
@@ -24,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::unprepared('DROP PROCEDURE IF EXISTS getKategoriAll');
+        Schema::dropIfExists('kategori_procedure');
     }
 };

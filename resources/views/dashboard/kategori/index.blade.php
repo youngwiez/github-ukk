@@ -36,12 +36,12 @@
                     <tbody>
                         @forelse ($kategori as $rowkategori)
                             <tr>
-                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $loop->iteration + ($kategori->currentPage() - 1) * $kategori->perPage() }}</td>
                                 <td>{{ $rowkategori->deskripsi }}</td>
                                 <td>{{ $rowkategori->kat }}</td>
                                 <td class="text-center">
                                     <form onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori ini?');" action="{{ route('kategori.destroy', $rowkategori->id) }}" method="POST">
-                                    <a href="{{ route('kategori.show', $rowkategori->id) }}" class="btn btn-sm btn-dark"><i class="fa fa-eye"></i></i></a>
+                                        <a href="{{ route('kategori.show', $rowkategori->id) }}" class="btn btn-sm btn-dark"><i class="fa fa-eye"></i></i></a>
                                         <a href="{{ route('kategori.edit', $rowkategori->id) }}" class="btn btn-sm btn-primary"><i class="fa fa-pencil-alt"></i></a>
                                         @csrf
                                         @method('DELETE')
@@ -56,6 +56,7 @@
                         @endforelse
                     </tbody>
                 </table>
+                {!! $kategori->links() !!}
                 <a href="{{ route('kategori.create') }}" class="btn btn-md btn-success mb-3">Tambah Kategori</a>
             </div>
         </div>

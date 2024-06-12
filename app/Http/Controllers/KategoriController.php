@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Kategori;
-use Illuminate\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
@@ -15,16 +14,21 @@ class KategoriController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request): View
+    public function index(Request $request)
     {
+        // menggunakan query builder
         if ($request->search){
-            $kategori = DB::table('kategori')->select('id','deskripsi',DB::raw('ketKategori(kategori) as kat'))
-                                             ->where('id','like','%'.$request->search.'%')
-                                             ->orWhere('deskripsi','like','%'.$request->search.'%')
-                                             ->orWhere(DB::raw('ketKategori(kategori)'),'like','%'.$request->search.'%')
-                                             ->paginate(10);
+            $kategori = DB::table('kategori')
+                            ->select('id','deskripsi',DB::raw('ketKategori(kategori) as kat'))
+                            ->where('id','like','%'.$request->search.'%')
+                            ->orWhere('deskripsi','like','%'.$request->search.'%')
+                            ->orWhere('kategori','like','%'.$request->search.'%')
+                            //  ->orWhere(DB::raw('ketKategori(kategori)'),'like','%'.$request->search.'%')
+                            ->paginate(3);
         } else {
-            $kategori = DB::table('kategori')->select('id','deskripsi',DB::raw('ketKategori(kategori) as kat'))->paginate(10);
+            $kategori = DB::table('kategori')
+                            ->select('id','deskripsi',DB::raw('ketKategori(kategori) as kat'))
+                            ->paginate(3);
         }
         return view('dashboard.kategori.index', ['kategori' => $kategori]);
     }
@@ -53,11 +57,25 @@ class KategoriController extends Controller
                 ->withInput();
         }
 
-        Kategori::create([
-            'deskripsi'  => $request->deskripsi,
-            'kategori'   => $request->kategori
-        ]);
+        // Kategori::create([
+        //     'deskripsi'  => $request->deskripsi,
+        //     'kategori'   => $request->kategori
+        // ]);
 
+        // transaction
+        try {
+            DB::beginTransaction(); // <= Starting the transaction
+            // Insert a new order history
+            DB::table('kategori')->insert([
+                'deskripsi'  => $request->deskripsi,
+                'kategori'   => $request->kategori,
+            ]);
+            DB::commit(); // <= Commit the changes
+        } catch (\Exception $e) {
+            report($e);
+            DB::rollBack(); // <= Rollback in case of an exception
+            return redirect()->route('kategori.create')->with(['error' => 'Terjadi kesalahan saat menyimpan data!']);
+        }
         return redirect()->route('kategori.index')->with(['success' => 'Data kategori berhasil disimpan!']);
     }
 
@@ -66,7 +84,9 @@ class KategoriController extends Controller
      */
     public function show($id) 
     {
-        $rowkategori = Kategori::findOrFail($id);
+        $rowkategori = DB::table('kategori')->select('id','deskripsi',DB::raw('ketKategori(kategori) as kat'))
+                                        ->where('id',$id)
+                                        ->first();
         return view('dashboard.kategori.show', compact('rowkategori'));
     }
 

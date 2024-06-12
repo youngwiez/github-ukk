@@ -38,7 +38,7 @@
                     <tbody>
                         @forelse ($barang as $rowbarang)
                             <tr>
-                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $loop->iteration + ($barang->currentPage() - 1) * $barang->perPage() }}</td>
                                 <td>{{ $rowbarang->merk }}</td>
                                 <td>{{ $rowbarang->seri }}</td>
                                 <td>{{ $rowbarang->spesifikasi }}</td>
@@ -63,6 +63,7 @@
                         @endforelse
                     </tbody>
                 </table>
+                {!! $barang->links() !!}
                 <a href="{{ route('barang.create') }}" class="btn btn-md btn-success">Tambah Barang</a>
             </div>
         </div>

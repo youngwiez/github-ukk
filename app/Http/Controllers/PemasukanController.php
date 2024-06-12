@@ -14,13 +14,25 @@ class PemasukanController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $pemasukan = Pemasukan::select(
-            'pemasukan.*', 
-            'barang.seri as seri')
-            ->join('barang', 'pemasukan.barang_id', '=', 'barang.id')
-            ->get();
+        // menggunakan eloquent
+        if ($request->search) {
+            $pemasukan = Pemasukan::select('pemasukan.*', 'barang.seri as seri')
+                            ->join('barang', 'pemasukan.barang_id', '=', 'barang.id')
+                            ->where('pemasukan.id','like','%'.$request->search.'%')
+                            ->orWhere('pemasukan.tgl_masuk','like','%'.$request->search.'%')
+                            ->orWhere('pemasukan.qty_masuk','like','%'.$request->search.'%')
+                            ->orWhereHas('barang', function($query) use ($request) {
+                                $query->where('seri','like','%'.$request->search.'%')
+                                    ->orWhere('merk','like','%'.$request->search.'%');
+                            })
+                            ->paginate(3);
+        } else {
+            $pemasukan = Pemasukan::select('pemasukan.*', 'barang.seri as seri')
+                                    ->join('barang', 'pemasukan.barang_id', '=', 'barang.id')
+                                    ->paginate(3);
+        }
         return view('dashboard.pemasukan.index', ['pemasukan' => $pemasukan]);
     }
 
@@ -58,9 +70,12 @@ class PemasukanController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show($id)
     {
-        //
+        $rowmasuk = Pemasukan::select('pemasukan.*', 'barang.seri as seri')
+                                ->join('barang', 'pemasukan.barang_id', '=', 'barang.id')
+                                ->findOrfail($id);
+        return view('dashboard.pemasukan.show', compact('rowmasuk'));
     }
 
     /**
