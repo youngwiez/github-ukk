@@ -25,7 +25,7 @@
     
                             <div class="form-group">
                                 <label class="font-weight-bold">Jumlah Pengeluaran Barang</label>
-                                <input type="text" class="form-control @error('qty_keluar') is-invalid @enderror" name="qty_keluar" value="{{ old('qty_keluar',$idkeluar->qty_keluar) }}" placeholder="keluarkan Jumlah Pengeluaran Barang">
+                                <input type="text" class="form-control @error('qty_keluar') is-invalid @enderror" name="qty_keluar" value="{{ old('qty_keluar',$idkeluar->qty_keluar) }}" placeholder="Jumlah Pengeluaran Barang">
                                 @error('qty_keluar')
                                     <div class="alert alert-danger mt-2">
                                         {{ $message }}
